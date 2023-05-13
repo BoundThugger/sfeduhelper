@@ -1,10 +1,37 @@
 import telebot
 import datetime
 import threading
+import openai
 from telebot import types
 
+openai.api_key = "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"
 bot = telebot.TeleBot('6148192339:AAHYR-Er2NHMTgITNdfs448m9Gh8Pt1k91U')
 
+####################################################################################################################
+@bot.message_handler(commands=['gpt_new_dialog'])
+def reminder_message(message):
+    messages = []
+    bot.send_message(message.chat.id, 'Новый диалог создан!')
+    bot.register_next_step_handler(message, nextQW, messages)
+def nextQW(message, messages):
+    try:
+        messages = update(messages, "user", message.text)
+        model_res = get_response(messages)
+        bot.send_message(message.chat.id,
+                         model_res)
+        bot.register_next_step_handler(message, nextQW, messages)
+    except:
+        bot.send_message(message.chat.id,
+                         'Подождите минутку, слишком много вопросов!')
+def update(messages, role, content):
+    messages.append({"role":role, "content":content})
+    return messages
+def get_response(messages):
+    response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=messages
+    )
+    return response['choices'][0]['message']['content']
 
 ####################################################################################################################
 @bot.message_handler(commands=['start'])
