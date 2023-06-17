@@ -3,13 +3,15 @@ import datetime
 import threading
 import openai
 import firebase_admin
+import json
+import requests
 from firebase_admin import credentials, firestore
 from telebot import types
 import telebot
 from bs4 import BeautifulSoup
 import urllib.request
 
-cred = credentials.Certificate('sfeduhelper-firebase-adminsdk-me8no-8e1a837f38.json')
+cred = credentials.Certificate('sfeduhelper-firebase-adminsdk-me8no-c11c100048.json')
 
 app = firebase_admin.initialize_app(cred)
 
@@ -124,10 +126,10 @@ def pars_iuas(html):
                     message1.append(day[j].text.strip())
                     message1.append('\n')
 
-        message2 = ['\n\n<b>', head[0].text.strip(), ' ', head1[60].text.strip(), '</b>']
-        row = table[1].find_all('tr')
-        time = row[1].find_all('td')
-        num_less = row[0].find_all('td')
+            message2 = ['\n\n<b>', head[0].text.strip(), ' ', head1[60].text.strip(), '</b>']
+            row = table[1].find_all('tr')
+            time = row[1].find_all('td')
+            num_less = row[0].find_all('td')
         for i in range(2, 8):
             day = row[i].find_all('td')
             message2.append('\n')
@@ -659,6 +661,7 @@ class User:
         self.Uni = None
         self.id = None
         self.isActive = False
+        self.group = None
 @bot.message_handler(commands=['start'])
 def start(message):
     isExist = False
@@ -668,6 +671,11 @@ def start(message):
         if doc.id == str(message.chat.id):
             isExist = True
             bot.send_message(message.chat.id, f'{doc.to_dict()["Name"]}, с возвращением!')
+            user = User(doc.to_dict()["Name"])
+            user.group = doc.to_dict()["group"]
+            user.Uni = doc.to_dict()["Uni"]
+            user.isActive = True
+            user_dict[message.chat.id] = user
             break
 
     if not isExist:
@@ -676,6 +684,7 @@ def start(message):
 
 
 def setname(message):
+    print(1)
     user = User(message.text)
     user_dict[message.chat.id] = user
     kb = types.InlineKeyboardMarkup()
@@ -685,9 +694,9 @@ def setname(message):
         btn.append(key)
     kb.add(*btn)
     bot.send_message(message.chat.id, f'Отлично!{user.name}, теперь расскажи в каком ты учишься вузе?', reply_markup=kb)
-    bot.register_next_step_handler(message, falserepl1)
 
 def falserepl1(message):
+    print(2)
     user = user_dict[message.chat.id]
     if user.isActive:
         get_user_text(message)
@@ -703,18 +712,32 @@ def falserepl1(message):
         bot.register_next_step_handler(message, falserepl1)
 @bot.callback_query_handler(func=lambda call: call.data.startswith('uni.'))
 def inline_kb(call):
+    print(3)
     if call.data in button:
         user = user_dict[call.message.chat.id]
-        user.uni = call.data.split('.')[1]
-        bot.send_message(call.message.chat.id, f'Отлично!{user.name}, регистрация завершена!')
-        registration(call.message)
+        user.Uni = call.data.split('.')[1]
+        user_dict[call.message.chat.id] = user
+        """bot.send_message(call.message.chat.id, f'Отлично!{user.name}, теперь скажи в какой ты группе?')
+        registration(call.message)"""
+
+        bot.send_message(call.message.chat.id, f'Отлично!{user.name}, теперь скажи в какой ты группе?')
+        bot.register_next_step_handler(call.message, group_info)
+
+def group_info(message):
+    print(4)
+    user = user_dict[message.chat.id]
+    user_dict[message.chat.id].group = message.text
+    bot.send_message(message.chat.id, f'Отлично!{user.name}, регистрация завершена!')
+    registration(message)
 def registration(message):
+    print(5)
     user_dict[message.chat.id].isActive = True
     user = user_dict[message.chat.id]
     doc_ref = db.collection(u'Users').document(str(message.chat.id))
     doc_ref.set({
         u'Name':user.name,
-        u'Uni':user.uni
+        u'Uni':user.Uni,
+        u'group': user.group
     })
     start_mess_1 = f'Здравствуйте, <b>{user.name}</b>, это помощник студента ЮФУ'
     start_mess_2 = f'Я могу хранить все ваши <u>методические материалы</u>, напоминать о твоих <u>дедлайнах</u> и <u>долгах</u>'
@@ -738,6 +761,7 @@ def start(message):
     bot.send_message(message.chat.id, 'Выберите институт', reply_markup=markup)
     bot.register_next_step_handler(message, get_text)
 def get_text(message):
+    user = user_dict[message.chat.id]
     if message.text == 'ИРТСУ':
         markup1 = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=3)
         a1 = types.KeyboardButton('1 курс')
@@ -751,7 +775,22 @@ def get_text(message):
         bot.register_next_step_handler(message, irtsu_courses)
 
     if message.text == 'ИКТИБ':
-        pass
+        if user.Uni == 'ИКТИБ':
+            url = "https://webictis.sfedu.ru/schedule-api/?query=" + user.group
+            ans = ""
+            response = requests.get(url)
+            json_object = json.loads(response.text)
+            table = json_object["table"]["table"]
+            for i in range(2, 7):
+                ans += table[i][0] + "\n"
+                for j in range(7):
+                    if table[i][j + 1] !=  "":
+                        ans += f"{j+1} пара" + "\n"
+                        ans += table[i][j + 1] + "\n"
+            bot.send_message(message.chat.id, ans)
+        else:
+            print(user.Uni)
+            bot.send_message(message.chat.id, 'Вы не состоите в этом вузе!')
 
     if message.text == 'ИУЭС':
         markup3 = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=3)
@@ -764,6 +803,7 @@ def get_text(message):
         markup3.add(a1, a2, a3, a4, a5, a6)
         bot.send_message(message.chat.id, 'Выберите курс', reply_markup=markup3)
         bot.register_next_step_handler(message, iuas_courses)
+
 
 def irtsu_courses(message):
     if message.text == '1 курс':
