@@ -86,6 +86,543 @@ def pars_irtsu(html):
     for el in sum_mess:
         message_str += el
     return message_str
+###################################################################################################################
+def site_iuas(url):
+    response = urllib.request.urlopen(url)
+    return response.read()
+
+def pars_iuas(html):
+    temp_now = datetime.datetime.now()
+    now = temp_now.date()
+    soup = BeautifulSoup(html, "lxml")
+    head = soup.find_all('p')
+    head1 = soup.find_all('font')
+    table = soup.find_all('table')
+
+    if (now > datetime.date(2023, 5, 7)) & (now < datetime.date(2023, 5, 15)):
+        message1 = ['<b>', head[0].text.strip(), ' ', head1[1].text.strip(), '</b>']
+        row = table[0].find_all('tr')
+        time = row[1].find_all('td')
+        num_less = row[0].find_all('td')
+        for i in range(2, 8):
+            day = row[i].find_all('td')
+            message1.append('\n')
+            message1.append('\n')
+            message1.append(day[0].text.strip())
+            message1.append('\n')
+            for j in range(1, 8):
+                if day[j].text.strip() == '':
+                    j += 1
+                else:
+                    message1.append('\n')
+                    message1.append(num_less[j].text.strip())
+                    message1.append(' пара ')
+                    message1.append('\n')
+                    message1.append('Время: ')
+                    message1.append(time[j].text.strip())
+                    message1.append('\n')
+                    message1.append(day[j].text.strip())
+                    message1.append('\n')
+
+        message2 = ['\n\n<b>', head[0].text.strip(), ' ', head1[60].text.strip(), '</b>']
+        row = table[1].find_all('tr')
+        time = row[1].find_all('td')
+        num_less = row[0].find_all('td')
+        for i in range(2, 8):
+            day = row[i].find_all('td')
+            message2.append('\n')
+            message2.append('\n')
+            message2.append(day[0].text.strip())
+            message2.append('\n')
+            for j in range(1, 8):
+                if day[j].text.strip() == '':
+                    j += 1
+                else:
+                    message2.append('\n')
+                    message2.append(num_less[j].text.strip())
+                    message2.append(' пара ')
+                    message2.append('\n')
+                    message2.append('Время: ')
+                    message2.append(time[j].text.strip())
+                    message2.append('\n')
+                    message2.append(day[j].text.strip())
+                    message2.append('\n')
+
+        sum_mess = message1 + message2
+        message_str = ''
+        for el in sum_mess:
+            message_str += el
+        return  message_str
+
+    if (now > datetime.date(2023, 5, 14)) & (now < datetime.date(2023, 5, 22)):
+        message1 = ['<b>', head[0].text.strip(), ' ', head1[60].text.strip(), '</b>']
+        row = table[1].find_all('tr')
+        time = row[1].find_all('td')
+        num_less = row[0].find_all('td')
+        for i in range(2, 8):
+            day = row[i].find_all('td')
+            message1.append('\n')
+            message1.append('\n')
+            message1.append(day[0].text.strip())
+            message1.append('\n')
+            for j in range(1, 8):
+                if day[j].text.strip() == '':
+                    j += 1
+                else:
+                    message1.append('\n')
+                    message1.append(num_less[j].text.strip())
+                    message1.append(' пара ')
+                    message1.append('\n')
+                    message1.append('Время: ')
+                    message1.append(time[j].text.strip())
+                    message1.append('\n')
+                    message1.append(day[j].text.strip())
+                    message1.append('\n')
+
+        message2 = ['\n\n<b>', head[0].text.strip(), ' ', head1[119].text.strip(), '</b>']
+        row = table[2].find_all('tr')
+        time = row[1].find_all('td')
+        num_less = row[0].find_all('td')
+        for i in range(2, 8):
+            day = row[i].find_all('td')
+            message2.append('\n')
+            message2.append('\n')
+            message2.append(day[0].text.strip())
+            message2.append('\n')
+            for j in range(1, 8):
+                if day[j].text.strip() == '':
+                    j += 1
+                else:
+                    message2.append('\n')
+                    message2.append(num_less[j].text.strip())
+                    message2.append(' пара ')
+                    message2.append('\n')
+                    message2.append('Время: ')
+                    message2.append(time[j].text.strip())
+                    message2.append('\n')
+                    message2.append(day[j].text.strip())
+                    message2.append('\n')
+
+        sum_mess = message1 + message2
+        message_str = ''
+        for el in sum_mess:
+            message_str += el
+        return  message_str
+
+    if (now > datetime.date(2023, 5, 21)) & (now < datetime.date(2023, 5, 29)):
+        message1 = ['<b>', head[0].text.strip(), ' ', head1[119].text.strip(), '</b>']
+        row = table[2].find_all('tr')
+        time = row[1].find_all('td')
+        num_less = row[0].find_all('td')
+        for i in range(2, 8):
+            day = row[i].find_all('td')
+            message1.append('\n')
+            message1.append('\n')
+            message1.append(day[0].text.strip())
+            message1.append('\n')
+            for j in range(1, 8):
+                if day[j].text.strip() == '':
+                    j += 1
+                else:
+                    message1.append('\n')
+                    message1.append(num_less[j].text.strip())
+                    message1.append(' пара ')
+                    message1.append('\n')
+                    message1.append('Время: ')
+                    message1.append(time[j].text.strip())
+                    message1.append('\n')
+                    message1.append(day[j].text.strip())
+                    message1.append('\n')
+
+        message2 = ['\n\n<b>', head[0].text.strip(), ' ', head1[178].text.strip(), '</b>']
+        row = table[3].find_all('tr')
+        time = row[1].find_all('td')
+        num_less = row[0].find_all('td')
+        for i in range(2, 8):
+            day = row[i].find_all('td')
+            message2.append('\n')
+            message2.append('\n')
+            message2.append(day[0].text.strip())
+            message2.append('\n')
+            for j in range(1, 8):
+                if day[j].text.strip() == '':
+                    j += 1
+                else:
+                    message2.append('\n')
+                    message2.append(num_less[j].text.strip())
+                    message2.append(' пара ')
+                    message2.append('\n')
+                    message2.append('Время: ')
+                    message2.append(time[j].text.strip())
+                    message2.append('\n')
+                    message2.append(day[j].text.strip())
+                    message2.append('\n')
+
+        sum_mess = message1 + message2
+        message_str = ''
+        for el in sum_mess:
+            message_str += el
+        return  message_str
+
+    if (now > datetime.date(2023, 5, 28)) & (now < datetime.date(2023, 6, 5)):
+        message1 = ['<b>', head[0].text.strip(), ' ', head1[178].text.strip(), '</b>']
+        row = table[3].find_all('tr')
+        time = row[1].find_all('td')
+        num_less = row[0].find_all('td')
+        for i in range(2, 8):
+            day = row[i].find_all('td')
+            message1.append('\n')
+            message1.append('\n')
+            message1.append(day[0].text.strip())
+            message1.append('\n')
+            for j in range(1, 8):
+                if day[j].text.strip() == '':
+                    j += 1
+                else:
+                    message1.append('\n')
+                    message1.append(num_less[j].text.strip())
+                    message1.append(' пара ')
+                    message1.append('\n')
+                    message1.append('Время: ')
+                    message1.append(time[j].text.strip())
+                    message1.append('\n')
+                    message1.append(day[j].text.strip())
+                    message1.append('\n')
+
+        message2 = ['\n\n<b>', head[0].text.strip(), ' ', head1[237].text.strip(), '</b>']
+        row = table[4].find_all('tr')
+        time = row[1].find_all('td')
+        num_less = row[0].find_all('td')
+        for i in range(2, 8):
+            day = row[i].find_all('td')
+            message2.append('\n')
+            message2.append('\n')
+            message2.append(day[0].text.strip())
+            message2.append('\n')
+            for j in range(1, 8):
+                if day[j].text.strip() == '':
+                    j += 1
+                else:
+                    message2.append('\n')
+                    message2.append(num_less[j].text.strip())
+                    message2.append(' пара ')
+                    message2.append('\n')
+                    message2.append('Время: ')
+                    message2.append(time[j].text.strip())
+                    message2.append('\n')
+                    message2.append(day[j].text.strip())
+                    message2.append('\n')
+
+        sum_mess = message1 + message2
+        message_str = ''
+        for el in sum_mess:
+            message_str += el
+        return message_str
+
+    if (now > datetime.date(2023, 6, 4)) & (now < datetime.date(2023, 6, 12)):
+        message1 = ['<b>', head[0].text.strip(), ' ', head1[237].text.strip(), '</b>']
+        row = table[4].find_all('tr')
+        time = row[1].find_all('td')
+        num_less = row[0].find_all('td')
+        for i in range(2, 8):
+            day = row[i].find_all('td')
+            message1.append('\n')
+            message1.append('\n')
+            message1.append(day[0].text.strip())
+            message1.append('\n')
+            for j in range(1, 8):
+                if day[j].text.strip() == '':
+                    j += 1
+                else:
+                    message1.append('\n')
+                    message1.append(num_less[j].text.strip())
+                    message1.append(' пара ')
+                    message1.append('\n')
+                    message1.append('Время: ')
+                    message1.append(time[j].text.strip())
+                    message1.append('\n')
+                    message1.append(day[j].text.strip())
+                    message1.append('\n')
+
+        message2 = ['\n\n<b>', head[0].text.strip(), ' ', head1[296].text.strip(), '</b>']
+        row = table[5].find_all('tr')
+        time = row[1].find_all('td')
+        num_less = row[0].find_all('td')
+        for i in range(2, 8):
+            day = row[i].find_all('td')
+            message2.append('\n')
+            message2.append('\n')
+            message2.append(day[0].text.strip())
+            message2.append('\n')
+            for j in range(1, 8):
+                if day[j].text.strip() == '':
+                    j += 1
+                else:
+                    message2.append('\n')
+                    message2.append(num_less[j].text.strip())
+                    message2.append(' пара ')
+                    message2.append('\n')
+                    message2.append('Время: ')
+                    message2.append(time[j].text.strip())
+                    message2.append('\n')
+                    message2.append(day[j].text.strip())
+                    message2.append('\n')
+
+        sum_mess = message1 + message2
+        message_str = ''
+        for el in sum_mess:
+            message_str += el
+        return  message_str
+
+    if (now > datetime.date(2023, 6, 11)) & (now < datetime.date(2023, 6, 19)):
+        message1 = ['<b>', head[0].text.strip(), ' ', head1[296].text.strip(), '</b>']
+        row = table[5].find_all('tr')
+        time = row[1].find_all('td')
+        num_less = row[0].find_all('td')
+        for i in range(2, 8):
+            day = row[i].find_all('td')
+            message1.append('\n')
+            message1.append('\n')
+            message1.append(day[0].text.strip())
+            message1.append('\n')
+            for j in range(1, 8):
+                if day[j].text.strip() == '':
+                    j += 1
+                else:
+                    message1.append('\n')
+                    message1.append(num_less[j].text.strip())
+                    message1.append(' пара ')
+                    message1.append('\n')
+                    message1.append('Время: ')
+                    message1.append(time[j].text.strip())
+                    message1.append('\n')
+                    message1.append(day[j].text.strip())
+                    message1.append('\n')
+
+        message2 = ['\n\n<b>', head[0].text.strip(), ' ', head1[355].text.strip(), '</b>']
+        row = table[6].find_all('tr')
+        time = row[1].find_all('td')
+        num_less = row[0].find_all('td')
+        for i in range(2, 8):
+            day = row[i].find_all('td')
+            message2.append('\n')
+            message2.append('\n')
+            message2.append(day[0].text.strip())
+            message2.append('\n')
+            for j in range(1, 8):
+                if day[j].text.strip() == '':
+                    j += 1
+                else:
+                    message2.append('\n')
+                    message2.append(num_less[j].text.strip())
+                    message2.append(' пара ')
+                    message2.append('\n')
+                    message2.append('Время: ')
+                    message2.append(time[j].text.strip())
+                    message2.append('\n')
+                    message2.append(day[j].text.strip())
+                    message2.append('\n')
+
+        sum_mess = message1 + message2
+        message_str = ''
+        for el in sum_mess:
+            message_str += el
+        return  message_str
+
+    if (now > datetime.date(2023, 6, 18)) & (now < datetime.date(2023, 6, 26)):
+        message1 = ['<b>', head[0].text.strip(), ' ', head1[355].text.strip(), '</b>']
+        row = table[6].find_all('tr')
+        time = row[1].find_all('td')
+        num_less = row[0].find_all('td')
+        for i in range(2, 8):
+            day = row[i].find_all('td')
+            message1.append('\n')
+            message1.append('\n')
+            message1.append(day[0].text.strip())
+            message1.append('\n')
+            for j in range(1, 8):
+                if day[j].text.strip() == '':
+                    j += 1
+                else:
+                    message1.append('\n')
+                    message1.append(num_less[j].text.strip())
+                    message1.append(' пара ')
+                    message1.append('\n')
+                    message1.append('Время: ')
+                    message1.append(time[j].text.strip())
+                    message1.append('\n')
+                    message1.append(day[j].text.strip())
+                    message1.append('\n')
+
+        message2 = ['\n\n<b>', head[0].text.strip(), ' ', head1[414].text.strip(), '</b>']
+        row = table[7].find_all('tr')
+        time = row[1].find_all('td')
+        num_less = row[0].find_all('td')
+        for i in range(2, 8):
+            day = row[i].find_all('td')
+            message2.append('\n')
+            message2.append('\n')
+            message2.append(day[0].text.strip())
+            message2.append('\n')
+            for j in range(1, 8):
+                if day[j].text.strip() == '':
+                    j += 1
+                else:
+                    message2.append('\n')
+                    message2.append(num_less[j].text.strip())
+                    message2.append(' пара ')
+                    message2.append('\n')
+                    message2.append('Время: ')
+                    message2.append(time[j].text.strip())
+                    message2.append('\n')
+                    message2.append(day[j].text.strip())
+                    message2.append('\n')
+
+        sum_mess = message1 + message2
+        message_str = ''
+        for el in sum_mess:
+            message_str += el
+        return  message_str
+
+    if (now > datetime.date(2023, 6, 25)) & (now < datetime.date(2023, 7, 3)):
+        message1 = ['<b>', head[0].text.strip(), ' ', head1[414].text.strip(), '</b>']
+        row = table[7].find_all('tr')
+        time = row[1].find_all('td')
+        num_less = row[0].find_all('td')
+        for i in range(2, 8):
+            day = row[i].find_all('td')
+            message1.append('\n')
+            message1.append('\n')
+            message1.append(day[0].text.strip())
+            message1.append('\n')
+            for j in range(1, 8):
+                if day[j].text.strip() == '':
+                    j += 1
+                else:
+                    message1.append('\n')
+                    message1.append(num_less[j].text.strip())
+                    message1.append(' пара ')
+                    message1.append('\n')
+                    message1.append('Время: ')
+                    message1.append(time[j].text.strip())
+                    message1.append('\n')
+                    message1.append(day[j].text.strip())
+                    message1.append('\n')
+
+        message2 = ['\n\n<b>', head[0].text.strip(), ' ', head1[473].text.strip(), '</b>']
+        row = table[8].find_all('tr')
+        time = row[1].find_all('td')
+        num_less = row[0].find_all('td')
+        for i in range(2, 8):
+            day = row[i].find_all('td')
+            message2.append('\n')
+            message2.append('\n')
+            message2.append(day[0].text.strip())
+            message2.append('\n')
+            for j in range(1, 8):
+                if day[j].text.strip() == '':
+                    j += 1
+                else:
+                    message2.append('\n')
+                    message2.append(num_less[j].text.strip())
+                    message2.append(' пара ')
+                    message2.append('\n')
+                    message2.append('Время: ')
+                    message2.append(time[j].text.strip())
+                    message2.append('\n')
+                    message2.append(day[j].text.strip())
+                    message2.append('\n')
+
+        sum_mess = message1 + message2
+        message_str = ''
+        for el in sum_mess:
+            message_str += el
+        return  message_str
+
+    if (now > datetime.date(2023, 7, 2)) & (now < datetime.date(2023, 7, 10)):
+        message1 = ['<b>', head[0].text.strip(), ' ', head1[473].text.strip(), '</b>']
+        row = table[8].find_all('tr')
+        time = row[1].find_all('td')
+        num_less = row[0].find_all('td')
+        for i in range(2, 8):
+            day = row[i].find_all('td')
+            message1.append('\n')
+            message1.append('\n')
+            message1.append(day[0].text.strip())
+            message1.append('\n')
+            for j in range(1, 8):
+                if day[j].text.strip() == '':
+                    j += 1
+                else:
+                    message1.append('\n')
+                    message1.append(num_less[j].text.strip())
+                    message1.append(' пара ')
+                    message1.append('\n')
+                    message1.append('Время: ')
+                    message1.append(time[j].text.strip())
+                    message1.append('\n')
+                    message1.append(day[j].text.strip())
+                    message1.append('\n')
+
+        message2 = ['\n\n<b>', head[0].text.strip(), ' ', head1[532].text.strip(), '</b>']
+        row = table[9].find_all('tr')
+        time = row[1].find_all('td')
+        num_less = row[0].find_all('td')
+        for i in range(2, 8):
+            day = row[i].find_all('td')
+            message2.append('\n')
+            message2.append('\n')
+            message2.append(day[0].text.strip())
+            message2.append('\n')
+            for j in range(1, 8):
+                if day[j].text.strip() == '':
+                    j += 1
+                else:
+                    message2.append('\n')
+                    message2.append(num_less[j].text.strip())
+                    message2.append(' пара ')
+                    message2.append('\n')
+                    message2.append('Время: ')
+                    message2.append(time[j].text.strip())
+                    message2.append('\n')
+                    message2.append(day[j].text.strip())
+                    message2.append('\n')
+
+        sum_mess = message1 + message2
+        message_str = ''
+        for el in sum_mess:
+            message_str += el
+        return  message_str
+
+    if (now > datetime.date(2023, 7, 9)) & (now < datetime.date(2023, 7, 17)):
+        message1 = ['<b>', head[0].text.strip(), ' ', head1[532].text.strip(), '</b>']
+        row = table[9].find_all('tr')
+        time = row[1].find_all('td')
+        num_less = row[0].find_all('td')
+        for i in range(2, 8):
+            day = row[i].find_all('td')
+            message1.append('\n')
+            message1.append('\n')
+            message1.append(day[0].text.strip())
+            message1.append('\n')
+            for j in range(1, 8):
+                if day[j].text.strip() == '':
+                    j += 1
+                else:
+                    message1.append('\n')
+                    message1.append(num_less[j].text.strip())
+                    message1.append(' пара ')
+                    message1.append('\n')
+                    message1.append('Время: ')
+                    message1.append(time[j].text.strip())
+                    message1.append('\n')
+                    message1.append(day[j].text.strip())
+                    message1.append('\n')
+
+        message_str = ''
+        for el in message1:
+            message_str += el
+        return  message_str
 ####################################################################################################################
 @bot.message_handler(commands=['gpt_new_dialog'])
 def reminder_message(message):
@@ -202,22 +739,31 @@ def start(message):
     bot.register_next_step_handler(message, get_text)
 def get_text(message):
     if message.text == 'ИРТСУ':
-        markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=3)
+        markup1 = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=3)
         a1 = types.KeyboardButton('1 курс')
         a2 = types.KeyboardButton('2 курс')
         a3 = types.KeyboardButton('3 курс')
         a4 = types.KeyboardButton('4 курс')
         a5 = types.KeyboardButton('5 курс')
         a6 = types.KeyboardButton('6 курс')
-        markup.add(a1, a2, a3, a4, a5, a6)
-        bot.send_message(message.chat.id, 'Выберите курс', reply_markup=markup)
+        markup1.add(a1, a2, a3, a4, a5, a6)
+        bot.send_message(message.chat.id, 'Выберите курс', reply_markup=markup1)
         bot.register_next_step_handler(message, irtsu_courses)
 
     if message.text == 'ИКТИБ':
         pass
 
     if message.text == 'ИУЭС':
-        pass
+        markup3 = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=3)
+        a1 = types.KeyboardButton('1 курс')
+        a2 = types.KeyboardButton('2 курс')
+        a3 = types.KeyboardButton('3 курс')
+        a4 = types.KeyboardButton('4 курс')
+        a5 = types.KeyboardButton('5 курс')
+        a6 = types.KeyboardButton('Школа')
+        markup3.add(a1, a2, a3, a4, a5, a6)
+        bot.send_message(message.chat.id, 'Выберите курс', reply_markup=markup3)
+        bot.register_next_step_handler(message, iuas_courses)
 
 def irtsu_courses(message):
     if message.text == '1 курс':
@@ -375,6 +921,90 @@ def irtsu_courses(message):
                         sau3, dig_kaf)
         bot.send_message(message.chat.id, 'Укажите вашу группу:', reply_markup=markup6)
         bot.register_next_step_handler(message, sixth_course)
+
+def iuas_courses(message):
+    if message.text == '1 курс':
+        markup1 = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=3)
+        b1 = types.KeyboardButton('УЭбо1-4')
+        b2 = types.KeyboardButton('УЭбо1-3')
+        b3 = types.KeyboardButton('УЭбо1-2')
+        m1 = types.KeyboardButton('УЭмо1-6')
+        m2 = types.KeyboardButton('УЭмо1-5')
+        m3 = types.KeyboardButton('УЭмо1-4')
+        m4 = types.KeyboardButton('УЭмв1-2')
+        m5 = types.KeyboardButton('УЭмз1-5')
+        s1 = types.KeyboardButton('УЭсо1-5')
+        s2 = types.KeyboardButton('УЭсо1-6 (1п.)')
+        s3 = types.KeyboardButton('УЭсо1-6 (2п.)')
+        s4 = types.KeyboardButton('УЭсо1-16 (1п.)')
+        s5 = types.KeyboardButton('УЭсо1-16 (2п.)')
+        markup1.add(b1, b2, b3, m1, m2, m3, m4, m5, s1, s2, s3, s4, s5)
+        bot.send_message(message.chat.id, 'Укажите вашу группу:', reply_markup=markup1)
+        bot.register_next_step_handler(message, first_course_iuas)
+
+    if message.text == '2 курс':
+        markup2 = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=3)
+        b1 = types.KeyboardButton('УЭбо2-4')
+        b2 = types.KeyboardButton('УЭбо2-3')
+        b3 = types.KeyboardButton('УЭбо2-2')
+        m1 = types.KeyboardButton('УЭмо2-7')
+        m2 = types.KeyboardButton('УЭмо2-6')
+        m3 = types.KeyboardButton('УЭмо2-5')
+        m4 = types.KeyboardButton('УЭмв2-1')
+        m5 = types.KeyboardButton('УЭмз2-5')
+        s1 = types.KeyboardButton('УЭсо2-5')
+        s2 = types.KeyboardButton('УЭсо2-16')
+        s3 = types.KeyboardButton('УЭсо2-6 (2п.)')
+        s4 = types.KeyboardButton('УЭсо2-6 (1п.)')
+        markup2.add(b1, b2, b3, m1, m2, m3, m4, m5, s1, s2, s3, s4)
+        bot.send_message(message.chat.id, 'Укажите вашу группу:', reply_markup=markup2)
+        bot.register_next_step_handler(message, second_course_iuas)
+
+    if message.text == '3 курс':
+        markup3 = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=3)
+        b1 = types.KeyboardButton('УЭбо3-4')
+        b2 = types.KeyboardButton('УЭбо3-3')
+        b3 = types.KeyboardButton('УЭбо3-2')
+        m1 = types.KeyboardButton('УЭмз3-5')
+        m2 = types.KeyboardButton('УЭмв3-4')
+        s1 = types.KeyboardButton('УЭсо3-5')
+        s2 = types.KeyboardButton('УЭсо3-6 (1п.)')
+        s3 = types.KeyboardButton('УЭсо3-6 (2п.)')
+        s4 = types.KeyboardButton('УЭсо3-6 (3п.)')
+        markup3.add(b1, b2, b3, m1, m2, s1, s2, s3, s4)
+        bot.send_message(message.chat.id, 'Укажите вашу группу:', reply_markup=markup3)
+        bot.register_next_step_handler(message, third_course_iuas)
+
+    if message.text == '4 курс':
+        markup4 = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
+        b1 = types.KeyboardButton('УЭбо4-4')
+        b2 = types.KeyboardButton('УЭбо4-3')
+        b3 = types.KeyboardButton('УЭбз4-2')
+        s1 = types.KeyboardButton('УЭсо4-5')
+        markup4.add(b1, b2, b3, s1)
+        bot.send_message(message.chat.id, 'Укажите вашу группу:', reply_markup=markup4)
+        bot.register_next_step_handler(message, fourth_course_iuas)
+
+    if message.text == '5 курс':
+        markup5 = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
+        s1 = types.KeyboardButton('УЭсо5-5')
+        s2 = types.KeyboardButton('УЭсо5-6 (1п.)')
+        s3 = types.KeyboardButton('УЭсо5-6 (2п.)')
+        s4 = types.KeyboardButton('УЭсо5-6 (3п.)')
+        markup5.add(s1, s2, s3, s4)
+        bot.send_message(message.chat.id, 'Укажите вашу группу:', reply_markup=markup5)
+        bot.register_next_step_handler(message, fifth_course_iuas)
+
+    if message.text == 'Школа':
+        markup6 = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=3)
+        s1 = types.KeyboardButton('9 класс (1п.)')
+        s2 = types.KeyboardButton('10 класс (1п.)')
+        s3 = types.KeyboardButton('11 класс (1п.)')
+        s4 = types.KeyboardButton('11 класс (2п.)')
+        s5 = types.KeyboardButton('11 класс (3п.)')
+        markup6.add(s1, s2, s3, s4, s5)
+        bot.send_message(message.chat.id, 'Укажите вашу группу:', reply_markup=markup6)
+        bot.register_next_step_handler(message, school_iuas)
 
 def first_course(message):
     if message.text == 'РТао1-12':
@@ -845,6 +1475,200 @@ def sixth_course(message):
 
     if message.text == 'Циф.каф.':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s116'))
+        bot.send_message(message.chat.id, mess, parse_mode='html')
+
+def first_course_iuas(message):
+    if message.text == 'УЭмо1-6':
+        mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/1.html'))
+        bot.send_message(message.chat.id, mess, parse_mode='html')
+
+    if message.text == 'УЭмо1-5':
+        mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/2.html'))
+        bot.send_message(message.chat.id, mess, parse_mode='html')
+
+    if message.text == 'УЭмо1-4':
+        mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/3.html'))
+        bot.send_message(message.chat.id, mess, parse_mode='html')
+
+    if message.text == 'УЭмв1-2':
+        mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/4.html'))
+        bot.send_message(message.chat.id, mess, parse_mode='html')
+
+    if message.text == 'УЭбо1-4':
+        mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/5.html'))
+        bot.send_message(message.chat.id, mess, parse_mode='html')
+
+    if message.text == 'УЭбо1-3':
+        mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/6.html'))
+        bot.send_message(message.chat.id, mess, parse_mode='html')
+
+    if message.text == 'УЭбо1-2':
+        mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/7.html'))
+        bot.send_message(message.chat.id, mess, parse_mode='html')
+
+    if message.text == 'УЭсо1-5':
+        mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/8.html'))
+        bot.send_message(message.chat.id, mess, parse_mode='html')
+
+    if message.text == 'УЭсо1-6 (1п.)':
+        mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/9.html'))
+        bot.send_message(message.chat.id, mess, parse_mode='html')
+
+    if message.text == 'УЭсо1-6 (2п.)':
+        mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/10.html'))
+        bot.send_message(message.chat.id, mess, parse_mode='html')
+
+    if message.text == 'УЭсо1-16 (1п.)':
+        mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/11.html'))
+        bot.send_message(message.chat.id, mess, parse_mode='html')
+
+    if message.text == 'УЭсо1-16 (2п.)':
+        mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/12.html'))
+        bot.send_message(message.chat.id, mess, parse_mode='html')
+
+    if message.text == 'УЭмз1-5':
+        mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/13.html'))
+        bot.send_message(message.chat.id, mess, parse_mode='html')
+
+def second_course_iuas(message):
+    if message.text == 'УЭмо2-7':
+        mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/14.html'))
+        bot.send_message(message.chat.id, mess, parse_mode='html')
+
+    if message.text == 'УЭмо2-6':
+        mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/15.html'))
+        bot.send_message(message.chat.id, mess, parse_mode='html')
+
+    if message.text == 'УЭмо2-5':
+        mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/16.html'))
+        bot.send_message(message.chat.id, mess, parse_mode='html')
+
+    if message.text == 'УЭмв2-1':
+        mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/17.html'))
+        bot.send_message(message.chat.id, mess, parse_mode='html')
+
+    if message.text == 'УЭмз2-5':
+        mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/18.html'))
+        bot.send_message(message.chat.id, mess, parse_mode='html')
+
+    if message.text == 'УЭбо2-4':
+        mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/19.html'))
+        bot.send_message(message.chat.id, mess, parse_mode='html')
+
+    if message.text == 'УЭбо2-3':
+        mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/20.html'))
+        bot.send_message(message.chat.id, mess, parse_mode='html')
+
+    if message.text == 'УЭбо2-2':
+        mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/21.html'))
+        bot.send_message(message.chat.id, mess, parse_mode='html')
+
+    if message.text == 'УЭсо2-5':
+        mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/22.html'))
+        bot.send_message(message.chat.id, mess, parse_mode='html')
+
+    if message.text == 'УЭсо2-16':
+        mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/23.html'))
+        bot.send_message(message.chat.id, mess, parse_mode='html')
+
+    if message.text == 'УЭсо2-6 (2п.)':
+        mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/24.html'))
+        bot.send_message(message.chat.id, mess, parse_mode='html')
+
+    if message.text == 'УЭсо2-6 (1п.)':
+        mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/25.html'))
+        bot.send_message(message.chat.id, mess, parse_mode='html')
+
+def third_course_iuas(message):
+    if message.text == 'УЭбо3-4':
+        mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/26.html'))
+        bot.send_message(message.chat.id, mess, parse_mode='html')
+
+    if message.text == 'УЭбо3-3':
+        mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/27.html'))
+        bot.send_message(message.chat.id, mess, parse_mode='html')
+
+    if message.text == 'УЭбо3-2':
+        mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/28.html'))
+        bot.send_message(message.chat.id, mess, parse_mode='html')
+
+    if message.text == 'УЭсо3-5':
+        mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/29.html'))
+        bot.send_message(message.chat.id, mess, parse_mode='html')
+
+    if message.text == 'УЭсо3-6 (1п.)':
+        mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/30.html'))
+        bot.send_message(message.chat.id, mess, parse_mode='html')
+
+    if message.text == 'УЭсо3-6 (2п.)':
+        mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/31.html'))
+        bot.send_message(message.chat.id, mess, parse_mode='html')
+
+    if message.text == 'УЭсо3-6 (3п.)':
+        mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/32.html'))
+        bot.send_message(message.chat.id, mess, parse_mode='html')
+
+    if message.text == 'УЭмз3-5':
+        mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/33.html'))
+        bot.send_message(message.chat.id, mess, parse_mode='html')
+
+    if message.text == 'УЭмв3-4':
+        mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/34.html'))
+        bot.send_message(message.chat.id, mess, parse_mode='html')
+
+def fourth_course_iuas(message):
+    if message.text == 'УЭбо4-4':
+        mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/35.html'))
+        bot.send_message(message.chat.id, mess, parse_mode='html')
+
+    if message.text == 'УЭбо4-3':
+        mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/36.html'))
+        bot.send_message(message.chat.id, mess, parse_mode='html')
+
+    if message.text == 'УЭсо4-5':
+        mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/37.html'))
+        bot.send_message(message.chat.id, mess, parse_mode='html')
+
+    if message.text == 'УЭбз4-2':
+        mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/38.html'))
+        bot.send_message(message.chat.id, mess, parse_mode='html')
+
+def fifth_course_iuas(message):
+    if message.text == 'УЭсо5-5':
+        mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/39.html'))
+        bot.send_message(message.chat.id, mess, parse_mode='html')
+
+    if message.text == 'УЭсо5-6 (1п.)':
+        mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/40.html'))
+        bot.send_message(message.chat.id, mess, parse_mode='html')
+
+    if message.text == 'УЭсо5-6 (2п.)':
+        mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/41.html'))
+        bot.send_message(message.chat.id, mess, parse_mode='html')
+
+    if message.text == 'УЭсо5-6 (3п.)':
+        mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/42.html'))
+        bot.send_message(message.chat.id, mess, parse_mode='html')
+
+def school_iuas(message):
+    if message.text == '9 класс (1п.)':
+        mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/43.html'))
+        bot.send_message(message.chat.id, mess, parse_mode='html')
+
+    if message.text == '10 класс (1п.)':
+        mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/44.html'))
+        bot.send_message(message.chat.id, mess, parse_mode='html')
+
+    if message.text == '11 класс (1п.)':
+        mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/45.html'))
+        bot.send_message(message.chat.id, mess, parse_mode='html')
+
+    if message.text == '11 класс (2п.)':
+        mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/46.html'))
+        bot.send_message(message.chat.id, mess, parse_mode='html')
+
+    if message.text == '11 класс (3п.)':
+        mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/47.html'))
         bot.send_message(message.chat.id, mess, parse_mode='html')
 ###################################################################################################################
 @bot.message_handler(commands=['addremind'])
