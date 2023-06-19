@@ -1,4 +1,3 @@
-import telebot
 import datetime
 import threading
 import openai
@@ -8,8 +7,8 @@ import requests
 from firebase_admin import credentials, firestore
 from telebot import types
 import telebot
-from bs4 import BeautifulSoup
-import urllib.request
+from IRTSU import site_irtsu, pars_irtsu
+from IUAS import site_iuas, pars_iuas
 
 cred = credentials.Certificate('sfeduhelper-firebase-adminsdk-me8no-c11c100048.json')
 
@@ -18,211 +17,17 @@ app = firebase_admin.initialize_app(cred)
 db = firestore.client()
 
 openai.api_key = "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"
+
 bot = telebot.TeleBot('6148192339:AAHYR-Er2NHMTgITNdfs448m9Gh8Pt1k91U')
-##############################################################################################################
-def site_irtsu(url):
-    response = urllib.request.urlopen(url)
-    return response.read()
 
-def pars_irtsu(html):
-    soup = BeautifulSoup(html, "lxml")
-    head = soup.find_all('p')
-    head1 = soup.find_all('font')
-    message1 = ['<b>', head[2].text.strip(),' ', head1[25].text.strip(), '</b>']
-
-    table = soup.find_all('table')
-
-    row = table[1].find_all('tr')
-    time = row[1].find_all('td')
-    num_less = row[0].find_all('td')
-    for i in range(2,8):
-        day = row[i].find_all('td')
-        message1.append('\n')
-        message1.append('\n')
-        message1.append(day[0].text.strip())
-        message1.append('\n')
-        for j in range(1,8):
-            if day[j].text.strip() == '':
-                j += 1
-            else:
-                message1.append('\n')
-                message1.append(num_less[j].text.strip())
-                message1.append(' пара ')
-                message1.append('\n')
-                message1.append('Время: ')
-                message1.append(time[j].text.strip())
-                message1.append('\n')
-                message1.append(day[j].text.strip())
-                message1.append('\n')
-
-
-    message2 = ['\n\n<b>', head[68].text.strip(),' ', head1[84].text.strip(), '</b>']
-
-    table = soup.find_all('table')
-
-    row = table[2].find_all('tr')
-    time = row[1].find_all('td')
-    num_less = row[0].find_all('td')
-    for i in range(2,8):
-        day = row[i].find_all('td')
-        message2.append('\n')
-        message2.append('\n')
-        message2.append(day[0].text.strip())
-        message2.append('\n')
-        for j in range(1,8):
-            if day[j].text.strip() == '':
-                j += 1
-            else:
-                message2.append('\n')
-                message2.append(num_less[j].text.strip())
-                message2.append(' пара ')
-                message2.append('\n')
-                message2.append('Время: ')
-                message2.append(time[j].text.strip())
-                message2.append('\n')
-                message2.append(day[j].text.strip())
-                message2.append('\n')
-
-    sum_mess = message1+message2
-    message_str = ''
-    for el in sum_mess:
-        message_str += el
-    return message_str
-###################################################################################################################
-def site_iuas(url):
-    response = urllib.request.urlopen(url)
-    return response.read()
-
-def iuas_two_tables(html, m, n, p, q):
-    soup = BeautifulSoup(html, "lxml")
-    head = soup.find_all('p')
-    head1 = soup.find_all('font')
-    table = soup.find_all('table')
-
-    message1 = ['<b>', head[0].text.strip(), ' ', head1[m].text.strip(), '</b>']
-    row = table[n].find_all('tr')
-    time = row[1].find_all('td')
-    num_less = row[0].find_all('td')
-    for i in range(2, 8):
-        day = row[i].find_all('td')
-        message1.append('\n')
-        message1.append('\n')
-        message1.append(day[0].text.strip())
-        message1.append('\n')
-        for j in range(1, 8):
-            if day[j].text.strip() == '':
-                j += 1
-            else:
-                message1.append('\n')
-                message1.append(num_less[j].text.strip())
-                message1.append(' пара ')
-                message1.append('\n')
-                message1.append('Время: ')
-                message1.append(time[j].text.strip())
-                message1.append('\n')
-                message1.append(day[j].text.strip())
-                message1.append('\n')
-
-    message2 = ['\n\n<b>', head[0].text.strip(), ' ', head1[p].text.strip(), '</b>']
-    row = table[q].find_all('tr')
-    time = row[1].find_all('td')
-    num_less = row[0].find_all('td')
-    for i in range(2, 8):
-        day = row[i].find_all('td')
-        message2.append('\n')
-        message2.append('\n')
-        message2.append(day[0].text.strip())
-        message2.append('\n')
-        for j in range(1, 8):
-            if day[j].text.strip() == '':
-                j += 1
-            else:
-                message2.append('\n')
-                message2.append(num_less[j].text.strip())
-                message2.append(' пара ')
-                message2.append('\n')
-                message2.append('Время: ')
-                message2.append(time[j].text.strip())
-                message2.append('\n')
-                message2.append(day[j].text.strip())
-                message2.append('\n')
-
-    sum_mess = message1 + message2
-    message_str = ''
-    for el in sum_mess:
-        message_str += el
-    return message_str
-
-def pars_iuas(html):
-    temp_now = datetime.datetime.now()
-    now = temp_now.date()
-    soup = BeautifulSoup(html, "lxml")
-    head = soup.find_all('p')
-    head1 = soup.find_all('font')
-    table = soup.find_all('table')
-
-    if (now > datetime.date(2023, 5, 7)) & (now < datetime.date(2023, 5, 15)):
-       return iuas_two_tables(html, 1, 0, 60, 1)
-
-    if (now > datetime.date(2023, 5, 14)) & (now < datetime.date(2023, 5, 22)):
-        return iuas_two_tables(html, 60, 1, 119, 2)
-
-    if (now > datetime.date(2023, 5, 21)) & (now < datetime.date(2023, 5, 29)):
-        return iuas_two_tables(html, 119, 2, 178, 3)
-
-    if (now > datetime.date(2023, 5, 28)) & (now < datetime.date(2023, 6, 5)):
-        return iuas_two_tables(html, 178, 3, 237, 4)
-
-    if (now > datetime.date(2023, 6, 4)) & (now < datetime.date(2023, 6, 12)):
-        return iuas_two_tables(html, 237, 4, 296, 5)
-
-    if (now > datetime.date(2023, 6, 11)) & (now < datetime.date(2023, 6, 19)):
-        return iuas_two_tables(html, 296, 5, 355, 6)
-
-    if (now > datetime.date(2023, 6, 18)) & (now < datetime.date(2023, 6, 26)):
-        return iuas_two_tables(html, 355, 6, 414, 7)
-
-    if (now > datetime.date(2023, 6, 25)) & (now < datetime.date(2023, 7, 3)):
-        return iuas_two_tables(html, 414, 7, 473, 8)
-
-    if (now > datetime.date(2023, 7, 2)) & (now < datetime.date(2023, 7, 10)):
-        return iuas_two_tables(html, 473, 8, 532, 9)
-        
-    if (now > datetime.date(2023, 7, 9)) & (now < datetime.date(2023, 7, 17)):
-        message1 = ['<b>', head[0].text.strip(), ' ', head1[532].text.strip(), '</b>']
-        row = table[9].find_all('tr')
-        time = row[1].find_all('td')
-        num_less = row[0].find_all('td')
-        for i in range(2, 8):
-            day = row[i].find_all('td')
-            message1.append('\n')
-            message1.append('\n')
-            message1.append(day[0].text.strip())
-            message1.append('\n')
-            for j in range(1, 8):
-                if day[j].text.strip() == '':
-                    j += 1
-                else:
-                    message1.append('\n')
-                    message1.append(num_less[j].text.strip())
-                    message1.append(' пара ')
-                    message1.append('\n')
-                    message1.append('Время: ')
-                    message1.append(time[j].text.strip())
-                    message1.append('\n')
-                    message1.append(day[j].text.strip())
-                    message1.append('\n')
-
-        message_str = ''
-        for el in message1:
-            message_str += el
-        return  message_str
 ####################################################################################################################
 @bot.message_handler(commands=['gpt_new_dialog'])
 def reminder_message(message):
     messages = []
     bot.send_message(message.chat.id, 'Новый диалог создан!')
     bot.register_next_step_handler(message, nextQW, messages)
+
+
 def nextQW(message, messages):
     try:
         messages = update(messages, "user", message.text)
@@ -233,9 +38,13 @@ def nextQW(message, messages):
     except:
         bot.send_message(message.chat.id,
                          'Подождите минутку, слишком много вопросов!')
+
+
 def update(messages, role, content):
-    messages.append({"role":role, "content":content})
+    messages.append({"role": role, "content": content})
     return messages
+
+
 def get_response(messages):
     response = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
@@ -243,10 +52,13 @@ def get_response(messages):
     )
     return response['choices'][0]['message']['content']
 
+
 ####################################################################################################################
 
 button = {'uni.ИКТИБ': 'ИКТИБ', 'uni.ИРТСУ': 'ИРТСУ', 'uni.ИУЭС': 'ИУЭС'}
 user_dict = {}
+
+
 class User:
     def __init__(self, name):
         self.name = name
@@ -254,6 +66,8 @@ class User:
         self.id = None
         self.isActive = False
         self.group = None
+
+
 @bot.message_handler(commands=['start'])
 def start(message):
     isExist = False
@@ -287,6 +101,7 @@ def setname(message):
     kb.add(*btn)
     bot.send_message(message.chat.id, f'Отлично!{user.name}, теперь расскажи в каком ты учишься вузе?', reply_markup=kb)
 
+
 def falserepl1(message):
     print(2)
     user = user_dict[message.chat.id]
@@ -302,6 +117,8 @@ def falserepl1(message):
         kb.add(*btn)
         bot.send_message(message.chat.id, f'{user.name}, выберите 1 из кнопок', reply_markup=kb)
         bot.register_next_step_handler(message, falserepl1)
+
+
 @bot.callback_query_handler(func=lambda call: call.data.startswith('uni.'))
 def inline_kb(call):
     print(3)
@@ -315,20 +132,23 @@ def inline_kb(call):
         bot.send_message(call.message.chat.id, f'Отлично!{user.name}, теперь скажи в какой ты группе?')
         bot.register_next_step_handler(call.message, group_info)
 
+
 def group_info(message):
     print(4)
     user = user_dict[message.chat.id]
     user_dict[message.chat.id].group = message.text
     bot.send_message(message.chat.id, f'Отлично!{user.name}, регистрация завершена!')
     registration(message)
+
+
 def registration(message):
     print(5)
     user_dict[message.chat.id].isActive = True
     user = user_dict[message.chat.id]
     doc_ref = db.collection(u'Users').document(str(message.chat.id))
     doc_ref.set({
-        u'Name':user.name,
-        u'Uni':user.Uni,
+        u'Name': user.name,
+        u'Uni': user.Uni,
         u'group': user.group
     })
     start_mess_1 = f'Здравствуйте, <b>{user.name}</b>, это помощник студента ЮФУ'
@@ -342,6 +162,8 @@ def registration(message):
     opp = types.KeyboardButton('Возможности')
     markup.add(opp)
     bot.send_message(message.chat.id, start_mess_3, parse_mode='html', reply_markup=markup)
+
+
 ###################################################################################################################
 @bot.message_handler(commands=['schedule'])
 def start(message):
@@ -352,6 +174,8 @@ def start(message):
     markup.add(IRTSU, IKTIB, IUAS)
     bot.send_message(message.chat.id, 'Выберите институт', reply_markup=markup)
     bot.register_next_step_handler(message, get_text)
+
+
 def get_text(message):
     user = user_dict[message.chat.id]
     if message.text == 'ИРТСУ':
@@ -376,8 +200,8 @@ def get_text(message):
             for i in range(2, 7):
                 ans += table[i][0] + "\n"
                 for j in range(7):
-                    if table[i][j + 1] !=  "":
-                        ans += f"{j+1} пара" + "\n"
+                    if table[i][j + 1] != "":
+                        ans += f"{j + 1} пара" + "\n"
                         ans += table[i][j + 1] + "\n"
             bot.send_message(message.chat.id, ans)
         else:
@@ -432,7 +256,8 @@ def irtsu_courses(message):
         s8 = types.KeyboardButton('РТсо1-82')
         bv1 = types.KeyboardButton('РТбв1-82')
         bv2 = types.KeyboardButton('РТбв1-102')
-        markup1.add(a1, a2, a3, a4, a5, b1, b2, b3, b4, b5, b6, b7, b8, b9, m1, m2, m3, m4, m5, m6, m7, m8, s1, s2, s3, s4, s5, s6, s7, s8, bv1, bv2)
+        markup1.add(a1, a2, a3, a4, a5, b1, b2, b3, b4, b5, b6, b7, b8, b9, m1, m2, m3, m4, m5, m6, m7, m8, s1, s2, s3,
+                    s4, s5, s6, s7, s8, bv1, bv2)
         bot.send_message(message.chat.id, 'Укажите вашу группу:', reply_markup=markup1)
         bot.register_next_step_handler(message, first_course)
 
@@ -464,7 +289,7 @@ def irtsu_courses(message):
         s4 = types.KeyboardButton('РТсо2-51')
         s5 = types.KeyboardButton('РТсо2-61')
         markup2.add(a1, a2, a3, a4, b1, b2, b3, b4, b5, b6, b7, b8, m1, m2, m3, m4, m5, m6, m7, m8, s1, s2,
-                        s3, s4, s5)
+                    s3, s4, s5)
         bot.send_message(message.chat.id, 'Укажите вашу группу:', reply_markup=markup2)
         bot.register_next_step_handler(message, second_course)
 
@@ -488,7 +313,7 @@ def irtsu_courses(message):
         s5 = types.KeyboardButton('РТсо3-50')
         s6 = types.KeyboardButton('РТсо3-60')
         markup3.add(a1, a2, a3, a4, b1, b2, b3, b4, b5, b6, b7, s1, s2,
-                        s3, s4, s5, s6)
+                    s3, s4, s5, s6)
         bot.send_message(message.chat.id, 'Укажите вашу группу:', reply_markup=markup3)
         bot.register_next_step_handler(message, third_course)
 
@@ -512,7 +337,7 @@ def irtsu_courses(message):
         s5 = types.KeyboardButton('РТсо4-59')
         s6 = types.KeyboardButton('РТсо4-69')
         markup4.add(a1, a2, a3, a4, b1, b2, b3, b4, b5, b6, b7, s1, s2,
-                        s3, s4, s5, s6)
+                    s3, s4, s5, s6)
         bot.send_message(message.chat.id, 'Укажите вашу группу:', reply_markup=markup4)
         bot.register_next_step_handler(message, fourth_course)
 
@@ -550,9 +375,10 @@ def irtsu_courses(message):
         sau3 = types.KeyboardButton('САУ-3')
         dig_kaf = types.KeyboardButton('Циф. каф.')
         markup6.add(s1, dpo, lyc, rt_i, inzh_sc, inzh_sc2, M1, M2, M3, M4, M5, M6, M7, M8, M9, M10, T1, sau1, sau2,
-                        sau3, dig_kaf)
+                    sau3, dig_kaf)
         bot.send_message(message.chat.id, 'Укажите вашу группу:', reply_markup=markup6)
         bot.register_next_step_handler(message, sixth_course)
+
 
 def iuas_courses(message):
     if message.text == '1 курс':
@@ -637,6 +463,7 @@ def iuas_courses(message):
         markup6.add(s1, s2, s3, s4, s5)
         bot.send_message(message.chat.id, 'Укажите вашу группу:', reply_markup=markup6)
         bot.register_next_step_handler(message, school_iuas)
+
 
 def first_course(message):
     if message.text == 'РТао1-12':
@@ -869,6 +696,7 @@ def second_course(message):
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s57'))
         bot.send_message(message.chat.id, mess, parse_mode='html')
 
+
 def third_course(message):
     if message.text == 'РТао3-10':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s58'))
@@ -937,6 +765,7 @@ def third_course(message):
     if message.text == 'РТсо3-60':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s74'))
         bot.send_message(message.chat.id, mess, parse_mode='html')
+
 
 def fourth_course(message):
     if message.text == 'РТао4-19':
@@ -1007,6 +836,7 @@ def fourth_course(message):
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s91'))
         bot.send_message(message.chat.id, mess, parse_mode='html')
 
+
 def fifth_course(message):
     if message.text == 'РТсо5-18':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s92'))
@@ -1023,6 +853,7 @@ def fifth_course(message):
     if message.text == 'РТсо5-68':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s95'))
         bot.send_message(message.chat.id, mess, parse_mode='html')
+
 
 def sixth_course(message):
     if message.text == 'РТсо6-57':
@@ -1109,6 +940,7 @@ def sixth_course(message):
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s116'))
         bot.send_message(message.chat.id, mess, parse_mode='html')
 
+
 def first_course_iuas(message):
     if message.text == 'УЭмо1-6':
         mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/1.html'))
@@ -1162,6 +994,7 @@ def first_course_iuas(message):
         mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/13.html'))
         bot.send_message(message.chat.id, mess, parse_mode='html')
 
+
 def second_course_iuas(message):
     if message.text == 'УЭмо2-7':
         mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/14.html'))
@@ -1211,6 +1044,7 @@ def second_course_iuas(message):
         mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/25.html'))
         bot.send_message(message.chat.id, mess, parse_mode='html')
 
+
 def third_course_iuas(message):
     if message.text == 'УЭбо3-4':
         mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/26.html'))
@@ -1248,6 +1082,7 @@ def third_course_iuas(message):
         mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/34.html'))
         bot.send_message(message.chat.id, mess, parse_mode='html')
 
+
 def fourth_course_iuas(message):
     if message.text == 'УЭбо4-4':
         mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/35.html'))
@@ -1265,6 +1100,7 @@ def fourth_course_iuas(message):
         mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/38.html'))
         bot.send_message(message.chat.id, mess, parse_mode='html')
 
+
 def fifth_course_iuas(message):
     if message.text == 'УЭсо5-5':
         mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/39.html'))
@@ -1281,6 +1117,7 @@ def fifth_course_iuas(message):
     if message.text == 'УЭсо5-6 (3п.)':
         mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/42.html'))
         bot.send_message(message.chat.id, mess, parse_mode='html')
+
 
 def school_iuas(message):
     if message.text == '9 класс (1п.)':
@@ -1302,20 +1139,26 @@ def school_iuas(message):
     if message.text == '11 класс (3п.)':
         mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/47.html'))
         bot.send_message(message.chat.id, mess, parse_mode='html')
+
+
 ###################################################################################################################
 @bot.message_handler(commands=['addremind'])
 def reminder_message(message):
     bot.send_message(message.chat.id, 'Введите название напоминания:')
     bot.register_next_step_handler(message, set_reminder_name)
-def set_reminder_name(message, tmp = ''):
+
+
+def set_reminder_name(message, tmp=''):
     user_data = {}
-    if tmp!='':
+    if tmp != '':
         user_data[message.chat.id] = {'reminder_name': tmp}
     else:
         user_data[message.chat.id] = {'reminder_name': message.text}
     bot.send_message(message.chat.id,
                      'Введите дату и время, когда вы хотите получить напоминание в формате ГГГГ-ММ-ДД чч:мм')
     bot.register_next_step_handler(message, reminder_set, user_data)
+
+
 def reminder_set(message, user_data):
     try:
         reminder_time = datetime.datetime.strptime(message.text, '%Y-%m-%d %H:%M')
@@ -1333,8 +1176,12 @@ def reminder_set(message, user_data):
     except ValueError:
         bot.send_message(message.chat.id, 'Вы ввели неверный формат даты и времени, попробуйте ещё раз')
         set_reminder_name(message, user_data[message.chat.id]['reminder_name'])
+
+
 def send_reminder(chat_id, reminder_name):
     bot.send_message(chat_id, f'Напоминание:\n{reminder_name}!', parse_mode='html')
+
+
 #################################################################################################################
 
 @bot.message_handler()
