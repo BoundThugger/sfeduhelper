@@ -7,6 +7,8 @@ import requests
 from firebase_admin import credentials, firestore
 from telebot import types
 import telebot
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 from IRTSU import site_irtsu, pars_irtsu
 from IUAS import site_iuas, pars_iuas
 
@@ -23,6 +25,8 @@ bot = telebot.TeleBot('6148192339:AAHYR-Er2NHMTgITNdfs448m9Gh8Pt1k91U')
 ####################################################################################################################
 @bot.message_handler(commands=['gpt_new_dialog'])
 def reminder_message(message):
+    if not check_autorized(message):
+        return
     messages = []
     bot.send_message(message.chat.id, 'Новый диалог создан!')
     bot.register_next_step_handler(message, nextQW, messages)
@@ -65,7 +69,6 @@ class User:
         self.Uni = None
         self.id = None
         self.isActive = False
-        self.group = None
 
 
 @bot.message_handler(commands=['start'])
@@ -78,7 +81,6 @@ def start(message):
             isExist = True
             bot.send_message(message.chat.id, f'{doc.to_dict()["Name"]}, с возвращением!')
             user = User(doc.to_dict()["Name"])
-            user.group = doc.to_dict()["group"]
             user.Uni = doc.to_dict()["Uni"]
             user.isActive = True
             user_dict[message.chat.id] = user
@@ -96,7 +98,7 @@ def setname(message):
     kb = types.InlineKeyboardMarkup()
     btn = []
     for i in button.items():
-        key = types.InlineKeyboardButton(text=f'кнопка {i[1]}', callback_data=i[0])
+        key = types.InlineKeyboardButton(text=f'{i[1]}', callback_data=i[0])
         btn.append(key)
     kb.add(*btn)
     bot.send_message(message.chat.id, f'Отлично!{user.name}, теперь расскажи в каком ты учишься вузе?', reply_markup=kb)
@@ -126,11 +128,11 @@ def inline_kb(call):
         user = user_dict[call.message.chat.id]
         user.Uni = call.data.split('.')[1]
         user_dict[call.message.chat.id] = user
-        """bot.send_message(call.message.chat.id, f'Отлично!{user.name}, теперь скажи в какой ты группе?')
-        registration(call.message)"""
+        bot.send_message(call.message.chat.id,  f'Отлично!{user.name}, регистрация завершена!')
+        registration(call.message)
 
-        bot.send_message(call.message.chat.id, f'Отлично!{user.name}, теперь скажи в какой ты группе?')
-        bot.register_next_step_handler(call.message, group_info)
+        """bot.send_message(call.message.chat.id, f'Отлично!{user.name}, теперь скажи в какой ты группе?')
+        bot.register_next_step_handler(call.message, group_info)"""
 
 
 def group_info(message):
@@ -148,8 +150,7 @@ def registration(message):
     doc_ref = db.collection(u'Users').document(str(message.chat.id))
     doc_ref.set({
         u'Name': user.name,
-        u'Uni': user.Uni,
-        u'group': user.group
+        u'Uni': user.Uni
     })
     start_mess_1 = f'Здравствуйте, <b>{user.name}</b>, это помощник студента ЮФУ'
     start_mess_2 = f'Я могу хранить все ваши <u>методические материалы</u>, напоминать о твоих <u>дедлайнах</u> и <u>долгах</u>'
@@ -167,6 +168,8 @@ def registration(message):
 ###################################################################################################################
 @bot.message_handler(commands=['schedule'])
 def start(message):
+    if not check_autorized(message):
+        return
     markup = types.ReplyKeyboardMarkup()
     IRTSU = types.KeyboardButton('ИРТСУ')
     IKTIB = types.KeyboardButton('ИКТИБ')
@@ -191,22 +194,24 @@ def get_text(message):
         bot.register_next_step_handler(message, irtsu_courses)
 
     if message.text == 'ИКТИБ':
-        if user.Uni == 'ИКТИБ':
-            url = "https://webictis.sfedu.ru/schedule-api/?query=" + user.group
-            ans = ""
-            response = requests.get(url)
-            json_object = json.loads(response.text)
-            table = json_object["table"]["table"]
-            for i in range(2, 7):
-                ans += table[i][0] + "\n"
-                for j in range(7):
-                    if table[i][j + 1] != "":
-                        ans += f"{j + 1} пара" + "\n"
-                        ans += table[i][j + 1] + "\n"
+        bot.send_message(message.chat.id, 'Введите название группы Пример: Ктбо1-7')
+        bot.register_next_step_handler(message, ictis_rasp)
+        """ if user.Uni == 'ИКТИБ':
+                url = "https://webictis.sfedu.ru/schedule-api/?query=" + user.group
+                ans = ""
+                response = requests.get(url)
+                json_object = json.loads(response.text)
+                table = json_object["table"]["table"]
+                for i in range(2, 7):
+                    ans += table[i][0] + "\n"
+                    for j in range(7):
+                        if table[i][j + 1] != "":
+                            ans += f"{j + 1} пара" + "\n"
+                            ans += table[i][j + 1] + "\n"
             bot.send_message(message.chat.id, ans)
         else:
             print(user.Uni)
-            bot.send_message(message.chat.id, 'Вы не состоите в этом вузе!')
+            bot.send_message(message.chat.id, 'Вы не состоите в этом вузе!')"""
 
     if message.text == 'ИУЭС':
         markup3 = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=3)
@@ -219,8 +224,25 @@ def get_text(message):
         markup3.add(a1, a2, a3, a4, a5, a6)
         bot.send_message(message.chat.id, 'Выберите курс', reply_markup=markup3)
         bot.register_next_step_handler(message, iuas_courses)
-
-
+def ictis_rasp(message):
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=1)
+    opp = types.KeyboardButton('Возможности')
+    markup.add(opp)
+    try:
+        url = "https://webictis.sfedu.ru/schedule-api/?query=" + message.text
+        ans = ""
+        response = requests.get(url)
+        json_object = json.loads(response.text)
+        table = json_object["table"]["table"]
+        for i in range(2, 7):
+            ans += table[i][0] + "\n"
+            for j in range(7):
+                if table[i][j + 1] != "":
+                    ans += f"{j + 1} пара" + "\n"
+                    ans += table[i][j + 1] + "\n"
+        bot.send_message(message.chat.id, ans, reply_markup=markup)
+    except:
+        bot.send_message(message.chat.id, "Такой группы не существует!", reply_markup=markup)
 def irtsu_courses(message):
     if message.text == '1 курс':
         markup1 = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=3)
@@ -468,682 +490,568 @@ def iuas_courses(message):
 def first_course(message):
     if message.text == 'РТао1-12':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s1'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
-
-    if message.text == 'РТао1-22':
+    elif message.text == 'РТао1-22':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s2'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
-
-    if message.text == 'РТао1-32':
+    elif message.text == 'РТао1-32':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s3'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
-
-    if message.text == 'РТао1-42':
+    elif message.text == 'РТао1-42':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s4'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
-
-    if message.text == 'РТао1-52':
+    elif message.text == 'РТао1-52':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s5'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
-
-    if message.text == 'РТбо1-12':
+    elif message.text == 'РТбо1-12':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s6'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
-
-    if message.text == 'РТбо1-22':
+    elif message.text == 'РТбо1-22':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s7'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
-
-    if message.text == 'РТбо1-32':
+    elif message.text == 'РТбо1-32':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s8'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
-
-    if message.text == 'РТбо1-42':
+    elif message.text == 'РТбо1-42':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s9'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
-
-    if message.text == 'РТбо1-52':
+    elif message.text == 'РТбо1-52':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s10'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
-
-    if message.text == 'РТбо1-62':
+    elif message.text == 'РТбо1-62':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s11'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
-
-    if message.text == 'РТбо1-72':
+    elif message.text == 'РТбо1-72':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s12'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
-
-    if message.text == 'РТбо1-92':
+    elif message.text == 'РТбо1-92':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s13'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
-
-    if message.text == 'РТбо1-102':
+    elif message.text == 'РТбо1-102':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s14'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
-
-    if message.text == 'РТмо1-12':
+    elif message.text == 'РТмо1-12':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s15'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
-
-    if message.text == 'РТмо1-22':
+    elif message.text == 'РТмо1-22':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s16'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
-
-    if message.text == 'РТмо1-32':
+    elif message.text == 'РТмо1-32':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s17'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
-
-    if message.text == 'РТмо1-42':
+    elif message.text == 'РТмо1-42':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s18'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
-
-    if message.text == 'РТмо1-52':
+    elif message.text == 'РТмо1-52':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s19'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
-
-    if message.text == 'РТмо1-62':
+    elif message.text == 'РТмо1-62':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s20'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
-
-    if message.text == 'РТмо1-72':
+    elif message.text == 'РТмо1-72':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s21'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
-
-    if message.text == 'РТмо1-82':
+    elif message.text == 'РТмо1-82':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s22'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
-
-    if message.text == 'РТсо1-12':
+    elif message.text == 'РТсо1-12':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s23'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
-
-    if message.text == 'РТсо1-22':
+    elif message.text == 'РТсо1-22':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s24'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
-
-    if message.text == 'РТсо1-32':
+    elif message.text == 'РТсо1-32':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s25'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
-
-    if message.text == 'РТсо1-42':
+    elif message.text == 'РТсо1-42':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s26'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
-
-    if message.text == 'РТсо1-52':
+    elif message.text == 'РТсо1-52':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s27'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
-
-    if message.text == 'РТсо1-62':
+    elif message.text == 'РТсо1-62':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s28'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
-
-    if message.text == 'РТсо1-72':
+    elif message.text == 'РТсо1-72':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s29'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
-
-    if message.text == 'РТсо1-82':
+    elif message.text == 'РТсо1-82':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s30'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
-
-    if message.text == 'РТбв1-82':
+    elif message.text == 'РТбв1-82':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s31'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
-
-    if message.text == 'РТбв1-102':
+    elif message.text == 'РТбв1-102':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s32'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
+    else:
+        mess = "Такой группы не существует!"
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=1)
+    opp = types.KeyboardButton('Возможности')
+    markup.add(opp)
+    bot.send_message(message.chat.id, mess, parse_mode='html', reply_markup=markup)
 
 
 def second_course(message):
     if message.text == 'РТао2-11':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s33'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'РТао2-21':
+    elif message.text == 'РТао2-21':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s34'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'РТао2-31':
+    elif message.text == 'РТао2-31':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s35'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'РТао2-41':
+    elif message.text == 'РТао2-41':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s36'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'РТбо2-11':
+    elif message.text == 'РТбо2-11':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s37'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'РТбо2-21':
+    elif message.text == 'РТбо2-21':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s38'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'РТбо2-31':
+    elif message.text == 'РТбо2-31':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s39'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'РТбо2-41':
+    elif message.text == 'РТбо2-41':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s40'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'РТбо2-61':
+    elif message.text == 'РТбо2-61':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s41'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'РТбо2-71':
+    elif message.text == 'РТбо2-71':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s42'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'РТбо2-81':
+    elif message.text == 'РТбо2-81':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s43'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'РТбо2-91':
+    elif message.text == 'РТбо2-91':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s44'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'РТмо2-11':
+    elif message.text == 'РТмо2-11':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s45'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'РТмо2-21':
+    elif message.text == 'РТмо2-21':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s46'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'РТмо2-31':
+    elif message.text == 'РТмо2-31':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s47'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'РТмо2-41':
+    elif message.text == 'РТмо2-41':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s48'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'РТмо2-51':
+    elif message.text == 'РТмо2-51':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s49'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'РТмо2-61':
+    elif message.text == 'РТмо2-61':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s50'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'РТмо2-71':
+    elif message.text == 'РТмо2-71':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s51'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'РТмо2-81':
+    elif message.text == 'РТмо2-81':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s52'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'РТсо2-11':
+    elif message.text == 'РТсо2-11':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s53'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'РТсо2-21':
+    elif message.text == 'РТсо2-21':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s54'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'РТсо2-41':
+    elif message.text == 'РТсо2-41':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s55'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'РТсо2-51':
+    elif message.text == 'РТсо2-51':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s56'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'РТсо2-61':
+    elif message.text == 'РТсо2-61':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s57'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
+    else:
+        mess = "Такой группы не существует!"
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=1)
+    opp = types.KeyboardButton('Возможности')
+    markup.add(opp)
+    bot.send_message(message.chat.id, mess, parse_mode='html', reply_markup=markup)
 
 
 def third_course(message):
     if message.text == 'РТао3-10':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s58'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'РТао3-20':
+    elif message.text == 'РТао3-20':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s59'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'РТао3-30':
+    elif message.text == 'РТао3-30':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s60'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'РТао3-40':
+    elif message.text == 'РТао3-40':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s61'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'РТбо3-10':
+    elif message.text == 'РТбо3-10':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s62'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'РТбо3-20':
+    elif message.text == 'РТбо3-20':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s63'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'РТбо3-30':
+    elif message.text == 'РТбо3-30':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s64'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'РТбо3-40':
+    elif message.text == 'РТбо3-40':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s65'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'РТбо3-60':
+    elif message.text == 'РТбо3-60':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s66'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'РТбо3-70':
+    elif message.text == 'РТбо3-70':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s67'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'РТбо3-80':
+    elif message.text == 'РТбо3-80':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s68'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'РТсо3-10':
+    elif message.text == 'РТсо3-10':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s69'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'РТсо3-20':
+    elif message.text == 'РТсо3-20':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s70'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'РТсо3-30':
+    elif message.text == 'РТсо3-30':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s71'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'РТсо3-40':
+    elif message.text == 'РТсо3-40':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s72'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'РТсо3-50':
+    elif message.text == 'РТсо3-50':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s73'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'РТсо3-60':
+    elif message.text == 'РТсо3-60':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s74'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
+    else:
+        mess = "Такой группы не существует!"
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=1)
+    opp = types.KeyboardButton('Возможности')
+    markup.add(opp)
+    bot.send_message(message.chat.id, mess, parse_mode='html', reply_markup=markup)
 
 
 def fourth_course(message):
     if message.text == 'РТао4-19':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s75'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'РТао4-29':
+    elif message.text == 'РТао4-29':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s76'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'РТао4-39':
+    elif message.text == 'РТао4-39':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s77'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'РТао4-49':
+    elif message.text == 'РТао4-49':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s78'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'РТбо4-19':
+    elif message.text == 'РТбо4-19':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s79'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'РТбо4-39':
+    elif message.text == 'РТбо4-39':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s80'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'РТбо4-59':
+    elif message.text == 'РТбо4-59':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s81'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'РТбо4-69':
+    elif message.text == 'РТбо4-69':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s82'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'РТбо4-79':
+    elif message.text == 'РТбо4-79':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s83'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'РТбо4-89':
+    elif message.text == 'РТбо4-89':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s84'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'РТбо4-99':
+    elif message.text == 'РТбо4-99':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s85'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'РТсо4-19':
+    elif message.text == 'РТсо4-19':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s86'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'РТсо4-29':
+    elif message.text == 'РТсо4-29':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s87'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'РТсо4-39':
+    elif message.text == 'РТсо4-39':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s88'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'РТсо4-49':
+    elif message.text == 'РТсо4-49':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s89'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'РТсо4-59':
+    elif message.text == 'РТсо4-59':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s90'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'РТсо4-69':
+    elif message.text == 'РТсо4-69':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s91'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
+    else:
+        mess = "Такой группы не существует!"
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=1)
+    opp = types.KeyboardButton('Возможности')
+    markup.add(opp)
+    bot.send_message(message.chat.id, mess, parse_mode='html', reply_markup=markup)
 
 
 def fifth_course(message):
     if message.text == 'РТсо5-18':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s92'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'РТсо5-28':
+    elif message.text == 'РТсо5-28':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s93'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'РТсо5-48':
+    elif message.text == 'РТсо5-48':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s94'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'РТсо5-68':
+    elif message.text == 'РТсо5-68':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s95'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
+    else:
+        mess = "Такой группы не существует!"
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=1)
+    opp = types.KeyboardButton('Возможности')
+    markup.add(opp)
+    bot.send_message(message.chat.id, mess, parse_mode='html', reply_markup=markup)
 
 
 def sixth_course(message):
     if message.text == 'РТсо6-57':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s96'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'ДПО':
+    elif message.text == 'ДПО':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s97'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'Лицей 4':
+    elif message.text == 'Лицей 4':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s98'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'РТ-И':
+    elif message.text == 'РТ-И':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s99'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'Инженер. школа':
+    elif message.text == 'Инженер. школа':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s100'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'Инженер.шк.2':
+    elif message.text == 'Инженер.шк.2':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s101'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'М-12':
+    elif message.text == 'М-12':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s102'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'М-22':
+    elif message.text == 'М-22':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s103'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'М-32':
+    elif message.text == 'М-32':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s104'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'Т-12':
+    elif message.text == 'Т-12':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s105'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'М-11':
+    elif message.text == 'М-11':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s106'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'М-21':
+    elif message.text == 'М-21':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s107'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'М-31':
+    elif message.text == 'М-31':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s108'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'М-10':
+    elif message.text == 'М-10':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s109'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'М-30':
+    elif message.text == 'М-30':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s110'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'М-19':
+    elif message.text == 'М-19':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s111'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'М-29':
+    elif message.text == 'М-29':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s112'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'САУ-1':
+    elif message.text == 'САУ-1':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s113'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'САУ-2':
+    elif message.text == 'САУ-2':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s114'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'САУ-3':
+    elif message.text == 'САУ-3':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s115'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'Циф.каф.':
+    elif message.text == 'Циф.каф.':
         mess = pars_irtsu(site_irtsu('https://rtf.sfedu.ru/raspis/?s116'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
+    else:
+        mess = "Такой группы не существует!"
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=1)
+    opp = types.KeyboardButton('Возможности')
+    markup.add(opp)
+    bot.send_message(message.chat.id, mess, parse_mode='html', reply_markup=markup)
 
 
 def first_course_iuas(message):
     if message.text == 'УЭмо1-6':
         mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/1.html'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'УЭмо1-5':
+    elif message.text == 'УЭмо1-5':
         mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/2.html'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'УЭмо1-4':
+    elif message.text == 'УЭмо1-4':
         mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/3.html'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'УЭмв1-2':
+    elif message.text == 'УЭмв1-2':
         mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/4.html'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'УЭбо1-4':
+    elif message.text == 'УЭбо1-4':
         mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/5.html'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'УЭбо1-3':
+    elif message.text == 'УЭбо1-3':
         mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/6.html'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'УЭбо1-2':
+    elif message.text == 'УЭбо1-2':
         mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/7.html'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'УЭсо1-5':
+    elif message.text == 'УЭсо1-5':
         mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/8.html'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'УЭсо1-6 (1п.)':
+    elif message.text == 'УЭсо1-6 (1п.)':
         mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/9.html'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'УЭсо1-6 (2п.)':
+    elif message.text == 'УЭсо1-6 (2п.)':
         mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/10.html'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'УЭсо1-16 (1п.)':
+    elif message.text == 'УЭсо1-16 (1п.)':
         mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/11.html'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'УЭсо1-16 (2п.)':
+    elif message.text == 'УЭсо1-16 (2п.)':
         mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/12.html'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'УЭмз1-5':
+    elif message.text == 'УЭмз1-5':
         mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/13.html'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
+
+    else:
+        mess = "Такой группы не существует!"
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=1)
+    opp = types.KeyboardButton('Возможности')
+    markup.add(opp)
+    bot.send_message(message.chat.id, mess, parse_mode='html', reply_markup=markup)
 
 
 def second_course_iuas(message):
     if message.text == 'УЭмо2-7':
         mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/14.html'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'УЭмо2-6':
+    elif message.text == 'УЭмо2-6':
         mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/15.html'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'УЭмо2-5':
+    elif message.text == 'УЭмо2-5':
         mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/16.html'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'УЭмв2-1':
+    elif message.text == 'УЭмв2-1':
         mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/17.html'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'УЭмз2-5':
+    elif message.text == 'УЭмз2-5':
         mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/18.html'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'УЭбо2-4':
+    elif message.text == 'УЭбо2-4':
         mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/19.html'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'УЭбо2-3':
+    elif message.text == 'УЭбо2-3':
         mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/20.html'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'УЭбо2-2':
+    elif message.text == 'УЭбо2-2':
         mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/21.html'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'УЭсо2-5':
+    elif message.text == 'УЭсо2-5':
         mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/22.html'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'УЭсо2-16':
+    elif message.text == 'УЭсо2-16':
         mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/23.html'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'УЭсо2-6 (2п.)':
+    elif message.text == 'УЭсо2-6 (2п.)':
         mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/24.html'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'УЭсо2-6 (1п.)':
+    elif message.text == 'УЭсо2-6 (1п.)':
         mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/25.html'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
+
+    else:
+        mess = "Такой группы не существует!"
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=1)
+    opp = types.KeyboardButton('Возможности')
+    markup.add(opp)
+    bot.send_message(message.chat.id, mess, parse_mode='html', reply_markup=markup)
 
 
 def third_course_iuas(message):
     if message.text == 'УЭбо3-4':
         mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/26.html'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'УЭбо3-3':
+    elif message.text == 'УЭбо3-3':
         mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/27.html'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'УЭбо3-2':
+    elif message.text == 'УЭбо3-2':
         mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/28.html'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'УЭсо3-5':
+    elif message.text == 'УЭсо3-5':
         mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/29.html'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'УЭсо3-6 (1п.)':
+    elif message.text == 'УЭсо3-6 (1п.)':
         mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/30.html'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'УЭсо3-6 (2п.)':
+    elif message.text == 'УЭсо3-6 (2п.)':
         mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/31.html'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'УЭсо3-6 (3п.)':
+    elif message.text == 'УЭсо3-6 (3п.)':
         mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/32.html'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'УЭмз3-5':
+    elif message.text == 'УЭмз3-5':
         mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/33.html'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'УЭмв3-4':
+    elif message.text == 'УЭмв3-4':
         mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/34.html'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
+
+    else:
+        mess = "Такой группы не существует!"
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=1)
+    opp = types.KeyboardButton('Возможности')
+    markup.add(opp)
+    bot.send_message(message.chat.id, mess, parse_mode='html', reply_markup=markup)
 
 
 def fourth_course_iuas(message):
     if message.text == 'УЭбо4-4':
         mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/35.html'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'УЭбо4-3':
+    elif message.text == 'УЭбо4-3':
         mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/36.html'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'УЭсо4-5':
+    elif message.text == 'УЭсо4-5':
         mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/37.html'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'УЭбз4-2':
+    elif message.text == 'УЭбз4-2':
         mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/38.html'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
+
+    else:
+        mess = "Такой группы не существует!"
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=1)
+    opp = types.KeyboardButton('Возможности')
+    markup.add(opp)
+    bot.send_message(message.chat.id, mess, parse_mode='html', reply_markup=markup)
 
 
 def fifth_course_iuas(message):
     if message.text == 'УЭсо5-5':
         mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/39.html'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'УЭсо5-6 (1п.)':
+    elif message.text == 'УЭсо5-6 (1п.)':
         mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/40.html'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'УЭсо5-6 (2п.)':
+    elif message.text == 'УЭсо5-6 (2п.)':
         mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/41.html'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == 'УЭсо5-6 (3п.)':
+    elif message.text == 'УЭсо5-6 (3п.)':
         mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/42.html'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
+
+    else:
+        mess = "Такой группы не существует!"
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=1)
+    opp = types.KeyboardButton('Возможности')
+    markup.add(opp)
+    bot.send_message(message.chat.id, mess, parse_mode='html', reply_markup=markup)
 
 
 def school_iuas(message):
     if message.text == '9 класс (1п.)':
         mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/43.html'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == '10 класс (1п.)':
+    elif message.text == '10 класс (1п.)':
         mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/44.html'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == '11 класс (1п.)':
+    elif message.text == '11 класс (1п.)':
         mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/45.html'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == '11 класс (2п.)':
+    elif message.text == '11 класс (2п.)':
         mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/46.html'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
 
-    if message.text == '11 класс (3п.)':
+    elif message.text == '11 класс (3п.)':
         mess = pars_iuas(site_iuas('https://iues.sfedu.ru/raspv/HTML/47.html'))
-        bot.send_message(message.chat.id, mess, parse_mode='html')
+
+    else:
+        mess = "Такой группы не существует!"
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=1)
+    opp = types.KeyboardButton('Возможности')
+    markup.add(opp)
+    bot.send_message(message.chat.id, mess, parse_mode='html', reply_markup=markup)
 
 
 ###################################################################################################################
 @bot.message_handler(commands=['addremind'])
 def reminder_message(message):
+    if not check_autorized(message):
+        return
     bot.send_message(message.chat.id, 'Введите название напоминания:')
     bot.register_next_step_handler(message, set_reminder_name)
 
@@ -1167,10 +1075,13 @@ def reminder_set(message, user_data):
         if delta.total_seconds() <= 0:
             bot.send_message(message.chat.id, 'Эта дата уже прошла')
         else:
+            markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=1)
+            opp = types.KeyboardButton('Возможности')
+            markup.add(opp)
             reminder_name = user_data[message.chat.id]['reminder_name']
             bot.send_message(message.chat.id,
                              f'Напоминание "<b>{reminder_name}</b>" установлено на <u>{reminder_time}</u>',
-                             parse_mode='html')
+                             parse_mode='html', reply_markup=markup)
             reminder_timer = threading.Timer(delta.total_seconds(), send_reminder, [message.chat.id, reminder_name])
             reminder_timer.start()
     except ValueError:
@@ -1179,22 +1090,86 @@ def reminder_set(message, user_data):
 
 
 def send_reminder(chat_id, reminder_name):
-    bot.send_message(chat_id, f'Напоминание:\n{reminder_name}!', parse_mode='html')
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=1)
+    opp = types.KeyboardButton('Возможности')
+    markup.add(opp)
+    bot.send_message(chat_id, f'Напоминание:\n{reminder_name}!', parse_mode='html', reply_markup=markup)
+#################################################################################################################
+@bot.message_handler(commands=['suggestions'])
+def reminder_message(message):
+    if not check_autorized(message):
+        return
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=1)
+    opp = types.KeyboardButton('Возможности')
+    markup.add(opp)
+    bot.send_message(message.chat.id, 'Напишите вашу идею или предложение 1 сообщением, при необходимости мы с вами свяжемся', reply_markup=markup)
+    bot.register_next_step_handler(message, suggestions)
+def suggestions(message):
+    bot.send_message(753990423,str(message.chat.id) + "\n"+
+                     message.text)
 
+    bot.send_message(message.chat.id,
+                     'Спасибо за обратную связь!')
 
 #################################################################################################################
+@bot.message_handler(commands=['contacts'])
+def reminder_message(message):
+    if not check_autorized(message):
+        return
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=1)
+    opp = types.KeyboardButton('Возможности')
+    markup.add(opp)
+    bot.send_message(message.chat.id, 'Наши контакты: \n <b>Давид</b> - \n https://vk.com/davidbazhenov \n <b>Иван</b> - \n https://vk.com/prettyjem', parse_mode='html', reply_markup=markup)
 
+#################################################################################################################
+@bot.message_handler(commands=['whoami'])
+def reminder_message(message):
+    if not check_autorized(message):
+        return
+    user = user_dict[message.chat.id]
+    bot.send_message(message.chat.id, f'Ваше имя: <b>{user.name}</b> \nВаш вуз: <b>{user.Uni}</b>', parse_mode='html')
+
+#################################################################################################################
 @bot.message_handler()
 def get_user_text(message):
+    if not check_autorized(message):
+        return
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=1)
+    opp = types.KeyboardButton('Возможности')
+    markup.add(opp)
     if message.text == 'Возможности':
-        mess_opp = f'Сохранить файл - <b>/savefile</b>\nПолучить файл - <b>/getfile</b>\nУзнать расписание - <b>/schedule</b>\nДобавить напоминание - <b>/addremind</b>\nСоздать новый диалог Chat GPT - <b>/gpt_new_dialog</b>'
+        mess_opp = f'Узнать расписание - <b>/schedule</b>\nДобавить напоминание - <b>/addremind</b>' \
+                   f' \n Создать новый диалог Chat GPT - <b>/gpt_new_dialog</b>\nИдеи и предложения для бота - ' \
+                   f'<b>/suggestions</b>\nКонтакты - <b>/contacts</b>\nИнформация о вас - <b>/whoami</b>'
         bot.send_message(message.chat.id, mess_opp, parse_mode='html')
     else:
         err_mess = 'Я тебя не понимаю'
-        bot.send_message(message.chat.id, err_mess)
+        bot.send_message(message.chat.id, err_mess, reply_markup=markup)
 
 
 #################################################################################################################
+def check_autorized(message):
+    if message.chat.id not in user_dict:
+        tmp = False
+        users_ref = db.collection(u'Users')
+        docs = users_ref.stream()
+        for doc in docs:
+            if doc.id == str(message.chat.id):
+                tmp = True
+                user = User(doc.to_dict()["Name"])
+                user.Uni = doc.to_dict()["Uni"]
+                user.isActive = True
+                user_dict[message.chat.id] = user
+        if tmp:
+            return True
+        else:
+            bot.send_message(message.chat.id, "Вы не зарегистрированы! \nИспользуйте команду <b>/start</b>",
+                             parse_mode='html')
+            return False
+    else:
+        return True
+
+
 # @bot.callback_query_handler(func=lambda call: True)
 # def ansopp(call):
 # if call.data == 'opp'
