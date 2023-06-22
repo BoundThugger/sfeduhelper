@@ -153,7 +153,7 @@ def registration(message):
         u'Uni': user.Uni
     })
     start_mess_1 = f'Здравствуйте, <b>{user.name}</b>, это помощник студента ЮФУ'
-    start_mess_2 = f'Я могу хранить все ваши <u>методические материалы</u>, напоминать о твоих <u>дедлайнах</u> и <u>долгах</u>'
+    start_mess_2 = f'Я могу <u>помочь в решении любого вопроса с помощью <b>ChatGPT</b></u>, напоминать о твоих <u>дедлайнах</u> и <u>долгах</u> и показывать твоё <u>расписание</u>'
     start_mess_3 = f'Чтобы воспользоваться моими функциями, нажмите на кнопку <b>"Возможности"</b>'
 
     bot.send_message(message.chat.id, start_mess_1, parse_mode='html')
@@ -1140,7 +1140,7 @@ def get_user_text(message):
     if message.text == 'Возможности':
         mess_opp = f'Узнать расписание - <b>/schedule</b>\nДобавить напоминание - <b>/addremind</b>' \
                    f' \n Создать новый диалог Chat GPT - <b>/gpt_new_dialog</b>\nИдеи и предложения для бота - ' \
-                   f'<b>/suggestions</b>\nКонтакты - <b>/contacts</b>\nИнформация о вас - <b>/whoami</b>'
+                   f'<b>/suggestions</b>\nКонтакты разработчиков - <b>/contacts</b>\nИнформация о вас - <b>/whoami</b>'
         bot.send_message(message.chat.id, mess_opp, parse_mode='html')
     else:
         err_mess = 'Я тебя не понимаю'
